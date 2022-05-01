@@ -1,6 +1,7 @@
 
 #include "tiling.h"
 #include "vertex.h"
+#include <unordered_map>
 
 using namespace std;
 
@@ -165,8 +166,98 @@ int max_flow(Vertex* s, Vertex* t, unordered_set<Vertex*> V)
 
 bool has_tiling(string floor)
 {
-        // TODO
-        return false;
+        //set the conditions
+		vector<Vertex*> A;
+		vector<Vertex*> B;
+		unordered_map<int, Vertex*> VertexSet;
+		unordered_set<Vertex*> map;
+		unordered_map<Vertex*, bool> isInASet;
+		int row_length;
+
+		//find row length
+		for(row_length = 0; row_length < floor.size() && floor[row_length] == ' '; row_length++)
+		//runs in O(s)
+		for(int i = 0; i < floor.size(); i++)
+		{
+			if(floor[i] == ' ')
+			{
+				VertexSet[i] = new Vertex();
+				map.insert(VertexSet[i]);
+			}
+		}
+
+		isInASet[VertexSet[0]] = true;
+		A.push_back(VertexSet[0]);
+
+		//connect to others
+		for(int i=0;i<floor.size();i++)
+		{
+			if(floor[i] == ' ' && isInASet[VertexSet[i]])
+			{
+				//check left
+				if(i+1 < floor.size() && floor[i+1] == ' ' )
+				{
+					//make an edge
+					VertexSet[i]->neighs.insert(VertexSet[i+1]);
+					VertexSet[i]->weights[VertexSet[i+1]]  = 1;
+					isInASet[VertexSet[i+1]] = false;
+					B.push_back(VertexSet[i+1]);
+
+				}
+
+				//check down
+				if(i + row_length < floor.size() && floor[i+row_length] == ' ' )
+				{
+					//make an edge
+					VertexSet[row_length]->neighs.insert(VertexSet[i+row_length]);
+					VertexSet[row_length]->weights[VertexSet[row_length+i]]  = 1;
+					isInASet[VertexSet[i+row_length]] = false;
+					B.push_back(VertexSet[i+row_length]);
+				}
+			}
+			else if(floor[i] == ' ' && !isInASet[VertexSet[i]])
+			{
+				//check left
+				if(i+1 < floor.size() && floor[i+1] == ' ' )
+				{
+					//make an edge, backwards
+					VertexSet[i+1]->neighs.insert(VertexSet[i]);
+					VertexSet[i+1]->weights[VertexSet[i]]  = 1;
+					isInASet[VertexSet[i+1]] = true;
+					A.push_back(VertexSet[i+1]);
+				}
+
+				//check down
+				if(i + row_length < floor.size() && floor[i+row_length] == ' ' )
+				{
+					//make an edge
+					VertexSet[i+row_length]->neighs.insert(VertexSet[i]);
+					VertexSet[i+row_length]->weights[VertexSet[i]]  = 1;
+					isInASet[VertexSet[i+row_length]] = true;
+					A.push_back(VertexSet[i+row_length]);
+				}
+			}
+		}
+
+		//make s
+		Vertex* s = new Vertex;
+		for(int i= 0; i < A.size(); i++)
+		{
+			s->neighs.insert(A[i]);
+			s->weights[A[i]] = 1;
+		}
+
+		//make t
+		Vertex* t = new Vertex;
+		for(int i= 0; i < B.size(); i++)
+		{
+			B[i]->neighs.insert(t);
+			B[i]->weights[t] = 1;
+		}
+
+		int max_flow_result = max_flow(s, t, map);
+
+		return max_flow_result == A.size() ? true : false;
 }
 
 
