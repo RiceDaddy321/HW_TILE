@@ -93,6 +93,7 @@ int max_flow(Vertex* s, Vertex* t, unordered_set<Vertex*> V)
 		cerr << "max_flow() was passed nullptr s or t." << endl;
 		abort(); 
 	}
+	cout << "debug" << endl; //debug
 
 	// If s or t is not in the vertex set.
         if (V.find(s) == V.end() || V.find(t) == V.end())
@@ -100,6 +101,8 @@ int max_flow(Vertex* s, Vertex* t, unordered_set<Vertex*> V)
 		cerr << "max_flow() was passed s or t not in V." << endl;
 		abort(); 
 	}
+
+	cout << "debug" << endl; //debug
 
 	// Check that every vertex has valid neighs/weights.
 	for (Vertex* v : V)
@@ -109,6 +112,7 @@ int max_flow(Vertex* s, Vertex* t, unordered_set<Vertex*> V)
 				cerr << "max_flow() was passed invalid vertex." << endl;
 				abort();
 			}
+	cout << "debug" << endl; //debug
 
         // Create a deep copy of V to use as the residual graph
         unordered_set<Vertex*> resV;
@@ -119,12 +123,16 @@ int max_flow(Vertex* s, Vertex* t, unordered_set<Vertex*> V)
                 resV.insert(rp);
                 C[vp] = rp;
         }
+	cout << "debug" << endl; //debug
+
         for (Vertex* vp : V)
                 for (Vertex* np : vp->neighs)
                 {
                         C[vp]->neighs.insert(C[np]);
                         C[vp]->weights[C[np]] = vp->weights[np];
                 }
+	cout << "debug" << endl; //debug
+
 	// Add any missing necessary "back" edges. 
         for (Vertex* vp : V)
                 for (Vertex* np : vp->neighs)
@@ -135,6 +143,7 @@ int max_flow(Vertex* s, Vertex* t, unordered_set<Vertex*> V)
 				C[np]->weights[C[vp]] = 0;
 			}
 		}
+	cout << "debug" << endl; //debug
 
         // Run Edmonds-Karp
         while (true)
@@ -150,11 +159,14 @@ int max_flow(Vertex* s, Vertex* t, unordered_set<Vertex*> V)
                         ++((*(resV.find(P[i+1])))->weights[P[i]]);
                 }
         }
+	cout << "debug" << endl; //debug
+
 
         // Compute actual flow amount
         int flow = 0;
         for (Vertex* snp : C[s]->neighs)
                 flow += 1 - C[s]->weights[snp];
+	cout << "debug" << endl; //debug
 
         // Delete residual graph
         for (Vertex* vp : resV)
@@ -175,8 +187,9 @@ bool has_tiling(string floor)
 		int row_length;
 
 		//find row length
-		for(row_length = 0; row_length < floor.size() && floor[row_length] == ' '; row_length++)
-		//runs in O(s)
+		for(row_length = 0; row_length < floor.size() && floor[row_length] == ' '; row_length++);
+	
+		//runs in O(s). Adds all vertices
 		for(int i = 0; i < floor.size(); i++)
 		{
 			if(floor[i] == ' ')
@@ -185,6 +198,7 @@ bool has_tiling(string floor)
 				map.insert(VertexSet[i]);
 			}
 		}
+		cout << "added vertices" << endl; //debug
 
 		isInASet[VertexSet[0]] = true;
 		A.push_back(VertexSet[0]);
@@ -209,8 +223,8 @@ bool has_tiling(string floor)
 				if(i + row_length < floor.size() && floor[i+row_length] == ' ' )
 				{
 					//make an edge
-					VertexSet[row_length]->neighs.insert(VertexSet[i+row_length]);
-					VertexSet[row_length]->weights[VertexSet[row_length+i]]  = 1;
+					VertexSet[i + row_length]->neighs.insert(VertexSet[i+row_length]);
+					VertexSet[i + row_length]->weights[VertexSet[row_length+i]]  = 1;
 					isInASet[VertexSet[i+row_length]] = false;
 					B.push_back(VertexSet[i+row_length]);
 				}
@@ -239,23 +253,32 @@ bool has_tiling(string floor)
 			}
 		}
 
+		cout << "connected vertices" << endl; //debug
+
 		//make s
 		Vertex* s = new Vertex;
+		map.insert(s);
 		for(int i= 0; i < A.size(); i++)
 		{
 			s->neighs.insert(A[i]);
 			s->weights[A[i]] = 1;
 		}
 
+		cout << "added s" << endl; //debug
+
 		//make t
 		Vertex* t = new Vertex;
+		map.insert(t);
 		for(int i= 0; i < B.size(); i++)
 		{
 			B[i]->neighs.insert(t);
 			B[i]->weights[t] = 1;
 		}
+		cout << "added t" << endl; //debug
 
 		int max_flow_result = max_flow(s, t, map);
+
+		cout << "ran edmund car[" << endl; //debug
 
 		return max_flow_result == A.size() ? true : false;
 }
