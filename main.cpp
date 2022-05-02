@@ -26,9 +26,9 @@ int main()
 	floor += "######\n";
 	floor += "#    #\n";
 	floor += "######\n";
-	cout << "Ran when parked" << endl;
+	
 	test(has_tiling(floor));
-	cout << "Ran when parked" << endl;
+	
 
 	floor = "";
 	floor += "#######\n";

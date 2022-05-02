@@ -93,7 +93,7 @@ int max_flow(Vertex* s, Vertex* t, unordered_set<Vertex*> V)
 		cerr << "max_flow() was passed nullptr s or t." << endl;
 		abort(); 
 	}
-	cout << "debug" << endl; //debug
+	
 
 	// If s or t is not in the vertex set.
         if (V.find(s) == V.end() || V.find(t) == V.end())
@@ -102,7 +102,7 @@ int max_flow(Vertex* s, Vertex* t, unordered_set<Vertex*> V)
 		abort(); 
 	}
 
-	cout << "debug" << endl; //debug
+	
 
 	// Check that every vertex has valid neighs/weights.
 	for (Vertex* v : V)
@@ -112,7 +112,7 @@ int max_flow(Vertex* s, Vertex* t, unordered_set<Vertex*> V)
 				cerr << "max_flow() was passed invalid vertex." << endl;
 				abort();
 			}
-	cout << "debug" << endl; //debug
+	
 
         // Create a deep copy of V to use as the residual graph
         unordered_set<Vertex*> resV;
@@ -123,7 +123,7 @@ int max_flow(Vertex* s, Vertex* t, unordered_set<Vertex*> V)
                 resV.insert(rp);
                 C[vp] = rp;
         }
-	cout << "debug" << endl; //debug
+	
 
         for (Vertex* vp : V)
                 for (Vertex* np : vp->neighs)
@@ -131,7 +131,7 @@ int max_flow(Vertex* s, Vertex* t, unordered_set<Vertex*> V)
                         C[vp]->neighs.insert(C[np]);
                         C[vp]->weights[C[np]] = vp->weights[np];
                 }
-	cout << "debug" << endl; //debug
+	
 
 	// Add any missing necessary "back" edges. 
         for (Vertex* vp : V)
@@ -143,7 +143,7 @@ int max_flow(Vertex* s, Vertex* t, unordered_set<Vertex*> V)
 				C[np]->weights[C[vp]] = 0;
 			}
 		}
-	cout << "debug" << endl; //debug
+	
 
         // Run Edmonds-Karp
         while (true)
@@ -159,14 +159,14 @@ int max_flow(Vertex* s, Vertex* t, unordered_set<Vertex*> V)
                         ++((*(resV.find(P[i+1])))->weights[P[i]]);
                 }
         }
-	cout << "debug" << endl; //debug
+	
 
 
         // Compute actual flow amount
         int flow = 0;
         for (Vertex* snp : C[s]->neighs)
                 flow += 1 - C[s]->weights[snp];
-	cout << "debug" << endl; //debug
+	
 
         // Delete residual graph
         for (Vertex* vp : resV)
@@ -199,35 +199,19 @@ bool has_tiling(string floor)
 				map.insert(VertexSet[i]);
 			}
 		}
-		cout << "added vertices" << endl; //debug
+		
 
-		//connect to others
+		//make edges
 		for(int i=0;i<floor.size();i++)
 		{
-			if (floor[i] == ' ' && isInASet.find(VertexSet[i]) == isInASet.end())
-			{
-				//not in either set so let's add it to a and hope for the best
-				isInASet[VertexSet[i]] = true;
-				A.push_back(VertexSet[i]);
-			}
-
-			if(floor[i] == ' ' && isInASet[VertexSet[i]])
+			if(floor[i] == ' ')
 			{
 				//check left
 				if(i+1 < floor.size() && floor[i+1] == ' ')
 				{
 					//make an edge
 					VertexSet[i]->neighs.insert(VertexSet[i+1]);
-					VertexSet[i]->weights[VertexSet[i+1]]  = 1;
-
-					//check if in already
-					if (isInASet.find(VertexSet[i + 1]) == isInASet.end())
-					{
-						isInASet[VertexSet[i+1]] = false;
-						B.push_back(VertexSet[i+1]);
-
-					}
-
+					VertexSet[i+1]->neighs.insert(VertexSet[i]);
 				}
 
 				//check down
@@ -235,51 +219,81 @@ bool has_tiling(string floor)
 				{
 					//make an edge
 					VertexSet[i]->neighs.insert(VertexSet[i+row_length]);
-					VertexSet[i]->weights[VertexSet[row_length+i]]  = 1;
-
-					if (isInASet.find(VertexSet[i + row_length]) == isInASet.end())
-					{
-						isInASet[VertexSet[i+row_length]] = false;
-						B.push_back(VertexSet[i+row_length]);
-
-					}
+					VertexSet[i+row_length]->neighs.insert(VertexSet[i]);
 				}
 			}
-			else if(floor[i] == ' ' && !isInASet[VertexSet[i]])
+		}
+		
+		queue <Vertex*> q;
+		int num = 0;
+		while (isInASet.size() < VertexSet.size())
+		{
+			for (; num < floor.size(); num++)
 			{
-				//check left
-				if(i+1 < floor.size() && floor[i+1] == ' ' )
+				if (floor[num] == ' ' && isInASet.find(VertexSet[num]) == isInASet.end())
 				{
-					//make an edge, backwards
-					VertexSet[i+1]->neighs.insert(VertexSet[i]);
-					VertexSet[i+1]->weights[VertexSet[i]]  = 1;
-
-					if (isInASet.find(VertexSet[i + 1]) == isInASet.end())
-					{
-
-						isInASet[VertexSet[i+1]] = true;
-						A.push_back(VertexSet[i+1]);
-					}
+					q.push(VertexSet[num]);
+					isInASet[VertexSet[num]] = true;
+					A.push_back(VertexSet[num]);
+					break;
 				}
+			}
 
-				//check down
-				if(i + row_length < floor.size() && floor[i+row_length] == ' ' && isInASet.find(VertexSet[i + row_length]) == isInASet.end())
+			// Run while there are vertices that haven't been colored
+			// in queue (Similar to BFS)
+			while (!q.empty())
+			{
+				// Dequeue a vertex from queue ( Refer http://goo.gl/35oz8 )
+				Vertex* u = q.front();
+				q.pop();
+
+				// Find all non-colored adjacent vertices
+				for (Vertex* v : u->neighs)
 				{
-					//make an edge
-					VertexSet[i+row_length]->neighs.insert(VertexSet[i]);
-					VertexSet[i+row_length]->weights[VertexSet[i]]  = 1;
 
-					if (isInASet.find(VertexSet[i + row_length]) == isInASet.end())
+					// An edge from u to v exists and
+					// destination v is not colored
+					if (isInASet.find(v) == isInASet.end())
 					{
-						isInASet[VertexSet[i+row_length]] = true;
-						A.push_back(VertexSet[i+row_length]);
+						// Assign alternate color to this adjacent v of u
+						isInASet[v] = !isInASet[u];
+						q.push(v);
 
+						//connect to each other
+						if (isInASet[u])
+						{
+							u->weights[v] = 1;
+							v->weights[u] = 0;
+							B.push_back(v);
+						}
+						else
+						{
+							v->weights[u] = 1;
+							u->weights[v] = 0;
+							A.push_back(v);
+
+						}
+					}
+					else
+					{
+						//connect to each other
+						if (isInASet[u])
+						{
+							u->weights[v] = 1;
+							v->weights[u] = 0;
+						}
+						else
+						{
+							v->weights[u] = 1;
+							u->weights[v] = 0;
+
+						}
 					}
 				}
 			}
 		}
 
-		cout << "connected vertices" << endl; //debug
+		
 
 		//make s
 		Vertex* s = new Vertex;
@@ -290,7 +304,7 @@ bool has_tiling(string floor)
 			s->weights[A[i]] = 1;
 		}
 
-		cout << "added s" << endl; //debug
+		
 
 		//make t
 		Vertex* t = new Vertex;
@@ -300,14 +314,14 @@ bool has_tiling(string floor)
 			B[i]->neighs.insert(t);
 			B[i]->weights[t] = 1;
 		}
-		cout << "added t" << endl; //debug
+	
 
 		if (A.size() != B.size())
 			return false;
 
 		int max_flow_result = max_flow(s, t, map);
 
-		cout << "ran edmund car[" << endl; //debug
+		
 
 		return max_flow_result == A.size() ? true : false;
 }
