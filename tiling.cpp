@@ -187,7 +187,8 @@ bool has_tiling(string floor)
 		int row_length;
 
 		//find row length
-		for(row_length = 0; row_length < floor.size() && floor[row_length] == ' '; row_length++);
+		for(row_length = 0; row_length < floor.size() && floor[row_length] != '\n'; row_length++);
+		row_length++;
 	
 		//runs in O(s). Adds all vertices
 		for(int i = 0; i < floor.size(); i++)
@@ -200,33 +201,48 @@ bool has_tiling(string floor)
 		}
 		cout << "added vertices" << endl; //debug
 
-		isInASet[VertexSet[0]] = true;
-		A.push_back(VertexSet[0]);
-
 		//connect to others
 		for(int i=0;i<floor.size();i++)
 		{
+			if (floor[i] == ' ' && isInASet.find(VertexSet[i]) == isInASet.end())
+			{
+				//not in either set so let's add it to a and hope for the best
+				isInASet[VertexSet[i]] = true;
+				A.push_back(VertexSet[i]);
+			}
+
 			if(floor[i] == ' ' && isInASet[VertexSet[i]])
 			{
 				//check left
-				if(i+1 < floor.size() && floor[i+1] == ' ' )
+				if(i+1 < floor.size() && floor[i+1] == ' ')
 				{
 					//make an edge
 					VertexSet[i]->neighs.insert(VertexSet[i+1]);
 					VertexSet[i]->weights[VertexSet[i+1]]  = 1;
-					isInASet[VertexSet[i+1]] = false;
-					B.push_back(VertexSet[i+1]);
+
+					//check if in already
+					if (isInASet.find(VertexSet[i + 1]) == isInASet.end())
+					{
+						isInASet[VertexSet[i+1]] = false;
+						B.push_back(VertexSet[i+1]);
+
+					}
 
 				}
 
 				//check down
-				if(i + row_length < floor.size() && floor[i+row_length] == ' ' )
+				if(i + row_length < floor.size() && floor[i+row_length] == ' ')
 				{
 					//make an edge
-					VertexSet[i + row_length]->neighs.insert(VertexSet[i+row_length]);
-					VertexSet[i + row_length]->weights[VertexSet[row_length+i]]  = 1;
-					isInASet[VertexSet[i+row_length]] = false;
-					B.push_back(VertexSet[i+row_length]);
+					VertexSet[i]->neighs.insert(VertexSet[i+row_length]);
+					VertexSet[i]->weights[VertexSet[row_length+i]]  = 1;
+
+					if (isInASet.find(VertexSet[i + row_length]) == isInASet.end())
+					{
+						isInASet[VertexSet[i+row_length]] = false;
+						B.push_back(VertexSet[i+row_length]);
+
+					}
 				}
 			}
 			else if(floor[i] == ' ' && !isInASet[VertexSet[i]])
@@ -237,18 +253,28 @@ bool has_tiling(string floor)
 					//make an edge, backwards
 					VertexSet[i+1]->neighs.insert(VertexSet[i]);
 					VertexSet[i+1]->weights[VertexSet[i]]  = 1;
-					isInASet[VertexSet[i+1]] = true;
-					A.push_back(VertexSet[i+1]);
+
+					if (isInASet.find(VertexSet[i + 1]) == isInASet.end())
+					{
+
+						isInASet[VertexSet[i+1]] = true;
+						A.push_back(VertexSet[i+1]);
+					}
 				}
 
 				//check down
-				if(i + row_length < floor.size() && floor[i+row_length] == ' ' )
+				if(i + row_length < floor.size() && floor[i+row_length] == ' ' && isInASet.find(VertexSet[i + row_length]) == isInASet.end())
 				{
 					//make an edge
 					VertexSet[i+row_length]->neighs.insert(VertexSet[i]);
 					VertexSet[i+row_length]->weights[VertexSet[i]]  = 1;
-					isInASet[VertexSet[i+row_length]] = true;
-					A.push_back(VertexSet[i+row_length]);
+
+					if (isInASet.find(VertexSet[i + row_length]) == isInASet.end())
+					{
+						isInASet[VertexSet[i+row_length]] = true;
+						A.push_back(VertexSet[i+row_length]);
+
+					}
 				}
 			}
 		}
@@ -275,6 +301,9 @@ bool has_tiling(string floor)
 			B[i]->weights[t] = 1;
 		}
 		cout << "added t" << endl; //debug
+
+		if (A.size() != B.size())
+			return false;
 
 		int max_flow_result = max_flow(s, t, map);
 
